@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>InstantWear</title>
+<meta name="theme-color" content="#121a35">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>html,body{margin:0}[hidden]{display:none!important}img{max-width:100%}
+
+/* Layout: sticky navy header, tape-measure hero with the 30-minute promise, two product sections (women, men), cart drawer; owner panel on #owner. */
+:root{
+  --display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
+  --body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --bg:#f3f4f9; --surface:#ffffff; --tile:#eceef6; --ink:#121a35; --mute:#5b6483; --line:#dcdfec;
+  --accent:#ffc928; --accent-ink:#121a35; --head:#121a35; --head-ink:#f3f4f9;
+  --ok:#13794d; --bad:#c43030; --warn:#8a5a00; --focus:#2d4bff; --scrim:rgba(10,14,32,.55);
+  --shadow:0 1px 2px rgba(18,26,53,.06),0 10px 28px rgba(18,26,53,.07);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1022; --surface:#161c38; --tile:#1e2547; --ink:#eef0fb; --mute:#98a1c6; --line:#2a3259;
+  --head:#080b1a; --head-ink:#eef0fb; --ok:#4cd08f; --bad:#ff8080; --warn:#f5c04a; --focus:#8ea2ff;
+  --scrim:rgba(0,0,0,.65); --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0c1022; --surface:#161c38; --tile:#1e2547; --ink:#eef0fb; --mute:#98a1c6; --line:#2a3259;
+  --head:#080b1a; --head-ink:#eef0fb; --ok:#4cd08f; --bad:#ff8080; --warn:#f5c04a; --focus:#8ea2ff;
+  --scrim:rgba(0,0,0,.65); --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark;}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--head);z-index:30}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.02em}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* header */
+.head{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--head);color:var(--head-ink)}
+.bar{display:flex;align-items:center;gap:12px;padding-block:10px}
+.logo{font:800 1.4rem var(--display);letter-spacing:-.03em;text-decoration:none;color:var(--head-ink)}
+.logo b{color:var(--accent)}
+.eta{font:700 12px var(--mono);background:var(--accent);color:var(--accent-ink);padding:4px 10px;border-radius:99px;white-space:nowrap}
+.spacer{flex:1}
+.nav{display:flex;gap:4px}
+.nav a{padding:8px 10px;border-radius:8px;text-decoration:none;font-weight:500;color:var(--head-ink);opacity:.8}
+.nav a[aria-current="page"]{opacity:1;background:rgba(255,255,255,.12)}
+.cartbtn{display:flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:8px 12px;font-weight:700;min-height:40px}
+.cartbtn span{background:var(--accent-ink);color:var(--accent);border-radius:99px;min-width:22px;padding:0 6px;text-align:center;font:700 12px/22px var(--mono)}
+
+/* hero */
+.hero{padding-block:32px 12px}
+.hero h1{font-size:clamp(2.3rem,7vw,4.4rem);line-height:1;font-weight:800;max-width:14ch}
+.hero p.lead{font-size:1.1rem;color:var(--mute);max-width:46ch;margin:14px 0 20px}
+.cta{display:flex;flex-wrap:wrap;gap:10px}
+.tape{margin-top:30px;max-width:760px}
+.tape .strip{height:46px;border-radius:6px;background:
+  repeating-linear-gradient(90deg,var(--accent-ink) 0 2px,transparent 2px calc(100%/6)) bottom/100% 70% no-repeat,
+  repeating-linear-gradient(90deg,var(--accent-ink) 0 1px,transparent 1px calc(100%/30)) bottom/100% 38% no-repeat,
+  var(--accent)}
+.tape ol{list-style:none;margin:8px 0 0;padding:0;display:flex;justify-content:space-between;gap:8px;font:500 12px var(--mono);color:var(--mute)}
+.tape li:last-child{text-align:right}
+.tape li b{display:block;color:var(--ink)}
+
+/* buttons, fields */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:700;text-decoration:none}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{min-height:34px;padding:4px 12px;font-size:13px}
+.btn.danger{color:var(--bad)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+input,select,textarea{font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-height:40px;width:100%;min-width:0}
+input[type=color]{padding:3px;cursor:pointer}
+input[type=checkbox]{width:18px;height:18px;min-height:0;accent-color:var(--ink)}
+textarea{resize:vertical}
+.fld{display:grid;gap:4px;min-width:0}
+.fld>span{font-size:12px;font-weight:500;color:var(--mute)}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.err{color:var(--bad);font-size:13px;min-height:1em;margin:0}
+.note{font-size:13px;color:var(--mute);margin:0}
+
+/* sections + cards */
+.sec{padding-block:28px 8px;scroll-margin-top:calc(70px + env(safe-area-inset-top,0px))}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+.sec-h h2{font-size:clamp(1.5rem,4vw,2.1rem);font-weight:800}
+.sec-h span{font:500 12px var(--mono);color:var(--mute)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));gap:14px}
+@media(min-width:700px){.grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.tile{position:relative;aspect-ratio:1/1;max-width:100%;background:color-mix(in srgb,var(--g) 16%,var(--tile));display:grid;place-items:center}
+.tile svg{width:68%;height:68%;filter:drop-shadow(0 6px 8px rgba(0,0,0,.14))}
+.tag{position:absolute;left:8px;top:8px;font:700 11px var(--mono);padding:3px 8px;border-radius:99px;background:var(--surface);color:var(--warn)}
+.tag.out{color:var(--bad)}
+.cinfo{padding:12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.cinfo h3{font-size:1rem;font-weight:600;letter-spacing:-.01em}
+.price{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px}
+.price b{font:700 1.05rem var(--mono)}
+.price s{color:var(--mute);font-size:13px}
+.price em{font-style:normal;color:var(--ok);font-weight:700;font-size:12px}
+.sizes{display:flex;flex-wrap:wrap;gap:6px}
+.sz{min-width:34px;min-height:32px;padding:0 8px;border:1px solid var(--line);background:var(--surface);border-radius:8px;font:500 12px var(--mono)}
+.sz[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.add{margin-top:auto;width:100%}
+.empty{padding:28px;border:1px dashed var(--line);border-radius:14px;color:var(--mute);text-align:center}
+footer{padding-block:36px 110px;color:var(--mute);font-size:13px}
+
+/* cart bar (phones) */
+.cartbar{position:fixed;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:15;display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--ink);color:var(--surface);border:0;border-radius:12px;padding:12px 16px;font-weight:700;box-shadow:var(--shadow)}
+@media(min-width:700px){.cartbar{display:none!important}}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--bg);z-index:50;overflow-y:auto;overscroll-behavior:contain;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px);box-shadow:var(--shadow)}
+.din{padding:16px}
+.dhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.dhead h2{font-size:1.5rem;font-weight:800}
+.line{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.line .mini{width:56px;height:56px}
+.line h4{margin:0;font-size:14px;font-weight:700}
+.line small{color:var(--mute)}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.qty button{width:34px;height:34px;border:0;background:none;font-size:18px}
+.qty b{min-width:26px;text-align:center;font:700 13px var(--mono)}
+.sum{display:grid;gap:6px;padding:14px 0}
+.sum div{display:flex;justify-content:space-between;gap:10px}
+.sum .tot{font-weight:800;font-size:1.1rem;border-top:1px solid var(--line);padding-top:8px}
+.cform{display:grid;gap:10px;padding-top:4px}
+.mini{display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--g) 18%,var(--tile))}
+.mini svg{width:72%;height:72%}
+.done{text-align:center;padding:12px 0}
+.done .cd{font:700 3.2rem/1.1 var(--mono);margin:12px 0 4px;letter-spacing:-.03em}
+.done .ok{display:inline-block;background:var(--accent);color:var(--accent-ink);font:700 12px var(--mono);padding:4px 10px;border-radius:99px}
+.done ul{list-style:none;padding:0;margin:16px 0;text-align:left;border-top:1px solid var(--line)}
+.done li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+
+/* owner */
+.pad{padding-block:28px 60px}
+.pad h1{font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800}
+.gate{max-width:380px;margin-top:18px;display:grid;gap:12px}
+.ohead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.stats{display:flex;flex-wrap:wrap;gap:10px 32px;padding-block:14px;margin-block:16px;border-block:1px solid var(--line)}
+.stats div{display:grid}
+.stats b{font:700 1.5rem var(--mono)}
+.stats span{font-size:12px;color:var(--mute)}
+.otabs{display:flex;gap:6px;margin-bottom:18px}
+.otabs button{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 16px;font-weight:700;min-height:40px}
+.otabs button[aria-selected="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.olayout{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;align-items:start}
+@media(max-width:860px){.olayout{grid-template-columns:minmax(0,1fr)}}
+.pform{display:grid;gap:12px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.pform h2{font-size:1.2rem}
+.prev{display:flex;gap:12px;align-items:center}
+.prev .mini{width:64px;height:64px;flex:none}
+.sizechk{display:flex;flex-wrap:wrap;gap:6px 14px}
+.sizechk label,.inl{display:flex;align-items:center;gap:6px;font-size:14px}
+.prow{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.prow .mini{width:52px;height:52px}
+.prow b{overflow-wrap:anywhere}
+.pmeta{display:grid;min-width:0}
+.pmeta span,.pnum span{font-size:12px;color:var(--mute)}
+.pnum{display:grid;text-align:right}
+.pnum b{font-family:var(--mono)}
+.pbar{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ocard{padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:grid;gap:8px;margin-bottom:12px}
+.ocard header{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ocard header b{font-family:var(--mono)}
+.ocard ul{margin:0;padding-left:18px}
+.pill{font:700 11px var(--mono);padding:3px 9px;border-radius:99px;background:var(--tile)}
+.ocard select{width:auto;min-width:170px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-weight:500;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+@media(min-width:700px){.toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:559px){.eta{display:none}.logo{font-size:1.25rem}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body>
+
+<header class="head">
+  <div class="wrap bar">
+    <a class="logo" href="#shop">Instant<b>Wear</b></a>
+    <span class="eta">30 MIN DELIVERY</span>
+    <span class="spacer"></span>
+    <nav class="nav" aria-label="Main">
+      <a href="#shop" id="nav-shop">Shop</a>
+      <a href="#owner" id="nav-owner">Owner</a>
+    </nav>
+    <button type="button" class="cartbtn" id="cartBtn" aria-label="Open cart">Cart <span id="cartCount" class="mono">0</span></button>
+  </div>
+</header>
+
+<main id="shopView">
+  <div class="wrap" id="setup" hidden><div class="empty" style="margin-top:16px">The store is not connected to its database yet. Open <b>config.js</b>, paste your Firebase settings, then reload. The README explains each step.</div></div>
+  <section class="wrap hero">
+    <h1>Welcome to InstantWear</h1>
+    <p class="lead">Women's and men's clothes, packed and at your door in 30 minutes.</p>
+    <div class="cta">
+      <a class="btn pri" href="#women">Women collection</a>
+      <a class="btn" href="#men">Men collection</a>
+    </div>
+    <div class="tape" aria-label="Delivery timeline from order to door in 30 minutes">
+      <div class="strip" role="presentation"></div>
+      <ol>
+        <li><b>0 min</b>You order</li>
+        <li><b>8 min</b>Packed</li>
+        <li><b>20 min</b>Rider on the way</li>
+        <li><b>30 min</b>At your door</li>
+      </ol>
+    </div>
+  </section>
+  <section class="wrap sec" id="women" aria-labelledby="h-women">
+    <div class="sec-h"><h2 id="h-women">Women collection</h2><span id="n-women"></span></div>
+    <div id="g-women"></div>
+  </section>
+  <section class="wrap sec" id="men" aria-labelledby="h-men">
+    <div class="sec-h"><h2 id="h-men">Men collection</h2><span id="n-men"></span></div>
+    <div id="g-men"></div>
+  </section>
+  <footer class="wrap">Orders are packed within minutes and delivered in about 30 minutes. Pay by cash or UPI to the rider.</footer>
+</main>
+
+<main id="ownerView" class="wrap pad" hidden>
+  <section id="gate">
+    <h1>Owner panel</h1>
+    <form class="gate" id="gateForm">
+      <p class="note">Sign in with your owner email to list clothes, change prices and see orders.</p>
+      <label class="fld"><span>Email</span><input id="g-email" type="email" autocomplete="username"></label>
+      <label class="fld"><span>Password</span><input id="g-pass" type="password" autocomplete="current-password"></label>
+      <p class="err" id="pinErr" role="alert"></p>
+      <button class="btn pri" type="submit" id="gBtn">Sign in</button>
+    </form>
+  </section>
+
+  <section id="panel" hidden>
+    <div class="ohead"><h1>Owner panel</h1><button class="btn sm" type="button" id="lockBtn">Sign out</button></div>
+    <p class="note" id="syncNote"></p>
+    <div class="stats" id="stats"></div>
+    <div class="otabs" role="tablist">
+      <button type="button" role="tab" data-tab="items" aria-selected="true">Clothes</button>
+      <button type="button" role="tab" data-tab="orders" aria-selected="false">Orders <span class="mono" id="ordBadge"></span></button>
+    </div>
+
+    <div id="tab-items" class="olayout">
+      <form class="pform" id="pform" novalidate>
+        <h2 id="fTitle">Add a cloth</h2>
+        <div class="prev"><div class="mini" id="fPrev"></div><label class="fld" style="flex:1"><span>Name</span><input id="f-name" maxlength="60" placeholder="e.g. Linen Shirt" required></label></div>
+        <div class="row2">
+          <label class="fld"><span>Collection</span><select id="f-cat"><option value="women">Women</option><option value="men">Men</option></select></label>
+          <label class="fld"><span>Type</span><select id="f-type"></select></label>
+        </div>
+        <div class="row3">
+          <label class="fld"><span>Price (₹)</span><input id="f-price" type="number" min="1" inputmode="numeric"></label>
+          <label class="fld"><span>MRP (₹)</span><input id="f-mrp" type="number" min="1" inputmode="numeric"></label>
+          <label class="fld"><span>Stock</span><input id="f-stock" type="number" min="0" inputmode="numeric" value="10"></label>
+        </div>
+        <label class="fld"><span>Colour</span><input id="f-color" type="color" value="#4a6fa5"></label>
+        <div class="fld"><span>Sizes</span><div class="sizechk" id="f-sizes"></div></div>
+        <label class="inl"><input id="f-active" type="checkbox" checked> Show to customers</label>
+        <p class="err" id="fErr" role="alert"></p>
+        <div class="cta"><button class="btn pri" type="submit" id="fSave">Add cloth</button><button class="btn" type="button" id="fCancel" hidden>Cancel</button></div>
+      </form>
+      <div id="plist"></div>
+    </div>
+
+    <div id="tab-orders" hidden><div id="olist"></div></div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dtitle" hidden>
+  <div class="din">
+    <div class="dhead"><h2 id="dtitle">Your cart</h2><button type="button" class="btn sm" id="dclose">Close</button></div>
+    <div id="dcart">
+      <div id="dlines"></div>
+      <div id="dsum" class="sum"></div>
+      <form class="cform" id="cform" novalidate>
+        <label class="fld"><span>Your name</span><input id="c-name" autocomplete="name" maxlength="60"></label>
+        <label class="fld"><span>Phone number</span><input id="c-phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="14"></label>
+        <label class="fld"><span>Delivery address</span><textarea id="c-addr" rows="3" autocomplete="street-address" maxlength="200"></textarea></label>
+        <label class="fld"><span>PIN code</span><input id="c-pin" inputmode="numeric" autocomplete="postal-code" maxlength="6"></label>
+        <p class="note">Pay cash or UPI to the rider when your order arrives.</p>
+        <p class="err" id="cerr" role="alert"></p>
+        <button class="btn pri" type="submit" id="placeBtn">Place order</button>
+      </form>
+    </div>
+    <div id="ddone" hidden></div>
+  </div>
+</aside>
+<button type="button" class="cartbar" id="cartbar" hidden><span id="cb-l"></span><span id="cb-r" class="mono"></span></button>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script></body></html>
