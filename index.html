@@ -171,6 +171,9 @@ footer{padding-block:36px 110px;color:var(--mute);font-size:13px}
 @media(min-width:700px){.toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}}
 @media(max-width:559px){.eta{display:none}.logo{font-size:1.25rem}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.hbtn{background:transparent;border:1px solid rgba(255,255,255,.35);color:var(--head-ink);border-radius:10px;padding:6px 12px;font-weight:500;min-height:40px}
+.cform h3{font-size:1.15rem}
+@media(max-width:559px){.nav{display:none}}
 </style></head><body>
 
 <header class="head">
@@ -180,8 +183,9 @@ footer{padding-block:36px 110px;color:var(--mute);font-size:13px}
     <span class="spacer"></span>
     <nav class="nav" aria-label="Main">
       <a href="#shop" id="nav-shop">Shop</a>
-      <a href="#owner" id="nav-owner">Owner</a>
+      
     </nav>
+    <button type="button" class="hbtn" id="acctBtn">Log in</button>
     <button type="button" class="cartbtn" id="cartBtn" aria-label="Open cart">Cart <span id="cartCount" class="mono">0</span></button>
   </div>
 </header>
@@ -231,6 +235,8 @@ footer{padding-block:36px 110px;color:var(--mute);font-size:13px}
   <section id="panel" hidden>
     <div class="ohead"><h1>Owner panel</h1><button class="btn sm" type="button" id="lockBtn">Sign out</button></div>
     <p class="note" id="syncNote"></p>
+    <p><button type="button" class="btn sm" id="alertBtn">Turn on order alerts on this device</button></p>
+    <p class="note">Alerts sound and pop up while this panel is open. For alerts when it is closed, set up the Telegram alert (see the guide).</p>
     <div class="stats" id="stats"></div>
     <div class="otabs" role="tablist">
       <button type="button" role="tab" data-tab="items" aria-selected="true">Clothes</button>
@@ -270,7 +276,17 @@ footer{padding-block:36px 110px;color:var(--mute);font-size:13px}
     <div id="dcart">
       <div id="dlines"></div>
       <div id="dsum" class="sum"></div>
+      <form class="cform" id="authForm" novalidate hidden>
+        <h3 id="authTitle">Log in to place your order</h3>
+        <label class="fld"><span>Email</span><input id="a-email" type="email" autocomplete="username"></label>
+        <label class="fld"><span>Password</span><input id="a-pass" type="password" autocomplete="current-password"></label>
+        <p class="err" id="aerr" role="alert"></p>
+        <button class="btn pri" type="submit" id="aBtn">Log in</button>
+        <button class="btn sm" type="button" id="aSwitch">New here? Create an account</button>
+        <button class="btn sm" type="button" id="aForgot">Forgot password?</button>
+      </form>
       <form class="cform" id="cform" novalidate>
+        <p class="note" id="whoami"></p>
         <label class="fld"><span>Your name</span><input id="c-name" autocomplete="name" maxlength="60"></label>
         <label class="fld"><span>Phone number</span><input id="c-phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="14"></label>
         <label class="fld"><span>Delivery address</span><textarea id="c-addr" rows="3" autocomplete="street-address" maxlength="200"></textarea></label>
