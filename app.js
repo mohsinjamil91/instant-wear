@@ -147,9 +147,9 @@ function renderCart(){
   if(!lines.length){
     var live=state.last&&state.last.status!=='Delivered'&&state.last.status!=='Cancelled';
     $('#dlines').innerHTML='<div class="empty">Your cart is empty.'+(live?'<br><br><button type="button" class="btn sm" data-act="track">Track your last order</button>':'')+'</div>';
-    $('#dsum').innerHTML='';$('#cform').hidden=true;return;
+    $('#dsum').innerHTML='';$('#cform').hidden=true;$('#authForm').hidden=!!state.user;return;
   }
-  $('#cform').hidden=false;
+  $('#cform').hidden=!state.user;$('#authForm').hidden=!!state.user;$('#whoami').textContent=state.user?'Signed in as '+state.user.email:'';
   $('#dlines').innerHTML=lines.map(function(l){
     return '<div class="line"><div class="mini" style="--g:'+safeColor(l.p.color)+'">'+garment(l.p.type)+'</div>'+
     '<div><h4>'+esc(l.p.name)+'</h4><small>Size '+esc(l.size)+' · '+fmt(l.p.price)+'</small></div>'+
@@ -208,11 +208,19 @@ function watchLast(){
     var el=$('#ostat');if(el) el.textContent=d.status;
   },function(){});
 }
+function notifyOwner(orderId){
+  try{
+    state.user.getIdToken().then(function(tok){
+      return fetch('/api/notify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:orderId,idToken:tok})});
+    }).catch(function(){});
+  }catch(e){}
+}
 $('#cform').addEventListener('submit',function(e){
   e.preventDefault();
   var name=$('#c-name').value.trim(), phone=$('#c-phone').value.replace(/[\s-]/g,'').replace(/^\+?91/,''), addr=$('#c-addr').value.trim(), pin=$('#c-pin').value.trim();
   var err=$('#cerr');
   if(!configured||!db){err.textContent='The store is not connected yet. Please try again later.';return}
+  if(!state.user){err.textContent='Log in to place your order.';return}
   if(!name){err.textContent='Enter your name.';$('#c-name').focus();return}
   if(!/^[6-9]\d{9}$/.test(phone)){err.textContent='Enter a 10-digit mobile number.';$('#c-phone').focus();return}
   if(addr.length<8){err.textContent='Enter your full delivery address.';$('#c-addr').focus();return}
@@ -221,7 +229,7 @@ $('#cform').addEventListener('submit',function(e){
   err.textContent='';
   var btn=$('#placeBtn');btn.disabled=true;btn.textContent='Placing order...';
   var t=totals(lines), now=new Date(), id=randId(20);
-  var o={id:id,code:id.slice(0,6).toUpperCase(),name:name,phone:phone,addr:addr,pin:pin,
+  var o={id:id,uid:state.user.uid,code:id.slice(0,6).toUpperCase(),name:name,phone:phone,addr:addr,pin:pin,
     items:lines.map(function(l){return {pid:l.pid,name:l.p.name,size:l.size,qty:l.qty,price:l.p.price}}),
     sub:t.sub,fee:t.fee,total:t.total,status:'Placed',at:now.toISOString(),etaAt:new Date(now.getTime()+30*60000).toISOString()};
   withTimeout(db.collection('orders').doc(id).set(o),10000).then(function(){
@@ -229,6 +237,7 @@ $('#cform').addEventListener('submit',function(e){
     LS.set('iw_cust',{name:name,phone:phone,addr:addr,pin:pin});
     state.cart=[];saveCart();
     btn.disabled=false;btn.textContent='Place order';
+    notifyOwner(id);
     showDone();
   },function(){
     btn.disabled=false;btn.textContent='Place order';
@@ -281,15 +290,29 @@ function renderOlist(){
     '<button type="button" class="btn sm danger" data-act="delorder" data-id="'+esc(o.id)+'">Remove</button></div></article>';
   }).join('');
 }
-var unOrders=null;
+var unOrders=null, firstOrders=true, actx=null;
+function beep(){
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    var o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);
+    o.frequency.value=880;g.gain.setValueAtTime(.25,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.7);
+    o.start();o.stop(actx.currentTime+.7);
+  }catch(e){}
+}
+function alertNewOrder(o){
+  toast('New order '+(o.code||'')+' · '+fmt(o.total));beep();
+  try{if(window.Notification&&Notification.permission==='granted') new Notification('New order '+(o.code||''),{body:(o.name||'')+' · '+fmt(o.total)})}catch(e){}
+}
 function watchOrders(){
   if(unOrders||!db) return;
   unOrders=db.collection('orders').orderBy('at','desc').limit(200).onSnapshot(function(s){
+    if(!firstOrders){s.docChanges().forEach(function(c){if(c.type==='added') alertNewOrder(c.doc.data())})}
+    firstOrders=false;
     state.orders=s.docs.map(function(d){return Object.assign({},d.data(),{id:d.id})});
     if(state.isOwner){renderStats();renderOlist()}
   },function(){toast('Could not load orders')});
 }
-function stopOrders(){if(unOrders){unOrders();unOrders=null}state.orders=[]}
+function stopOrders(){if(unOrders){unOrders();unOrders=null}state.orders=[];firstOrders=true}
 
 /* product form */
 function initForm(){
@@ -349,9 +372,11 @@ $('#lockBtn').addEventListener('click',function(){if(auth) auth.signOut()});
 if(configured){
   auth.onAuthStateChanged(function(u){
     state.user=u;state.isOwner=!!(u&&CFG.ownerUid&&u.uid===CFG.ownerUid);
-    if(u&&!state.isOwner){state.gateMsg='This account is not the owner account.';auth.signOut();return}
-    if(state.isOwner) watchOrders(); else stopOrders();
-    renderOwner();
+    if(state.isOwner){state.gateMsg='';watchOrders()}else stopOrders();
+    if(u&&!state.isOwner&&location.hash==='#owner') state.gateMsg='You are signed in as a customer ('+u.email+'). Sign in with the owner account to continue.';
+    $('#acctBtn').textContent=u?'Log out':'Log in';
+    renderOwner();renderCart();
+    if(u&&state.last) watchLast();
   });
 }
 $$('.otabs button').forEach(function(b){b.addEventListener('click',function(){
@@ -359,6 +384,50 @@ $$('.otabs button').forEach(function(b){b.addEventListener('click',function(){
   $$('.otabs button').forEach(function(x){x.setAttribute('aria-selected',String(x===b))});
   $('#tab-items').hidden=state.tab!=='items';$('#tab-orders').hidden=state.tab!=='orders';
 })});
+
+/* customer login */
+var authMode='login';
+function setAuthMode(m){
+  authMode=m;
+  $('#authTitle').textContent=m==='login'?'Log in to place your order':'Create your account';
+  $('#aBtn').textContent=m==='login'?'Log in':'Create account';
+  $('#aSwitch').textContent=m==='login'?'New here? Create an account':'Already have an account? Log in';
+  $('#a-pass').setAttribute('autocomplete',m==='login'?'current-password':'new-password');
+  $('#aerr').textContent='';
+}
+$('#aSwitch').addEventListener('click',function(){setAuthMode(authMode==='login'?'signup':'login')});
+$('#aForgot').addEventListener('click',function(){
+  var em=$('#a-email').value.trim();
+  if(!auth){return}
+  if(!em){$('#aerr').textContent='Enter your email first.';return}
+  auth.sendPasswordResetEmail(em).then(function(){toast('Password reset email sent')},function(){$('#aerr').textContent='Could not send the reset email. Check the address.'});
+});
+$('#authForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  if(!configured||!auth){$('#aerr').textContent='The store is not connected yet.';return}
+  var em=$('#a-email').value.trim(), pw=$('#a-pass').value;
+  if(!em||pw.length<6){$('#aerr').textContent='Enter your email and a password of at least 6 characters.';return}
+  var btn=$('#aBtn');btn.disabled=true;
+  var wasSignup=authMode==='signup';
+  var p=wasSignup?auth.createUserWithEmailAndPassword(em,pw):auth.signInWithEmailAndPassword(em,pw);
+  p.then(function(){$('#a-pass').value='';$('#aerr').textContent='';toast(wasSignup?'Account created':'Logged in')},function(err){
+    var c=(err&&err.code)||'';
+    $('#aerr').textContent=c==='auth/email-already-in-use'?'This email already has an account. Log in instead.':
+      c==='auth/weak-password'?'Use a password with at least 6 characters.':
+      c==='auth/invalid-email'?'Enter a valid email address.':
+      c==='auth/operation-not-allowed'?'Email sign-in is not enabled for this store.':
+      c==='auth/too-many-requests'?'Too many attempts. Try again in a few minutes.':'Email or password is not right.';
+  }).then(function(){btn.disabled=false});
+});
+$('#acctBtn').addEventListener('click',function(){
+  if(!auth){toast('The store is not connected yet');return}
+  if(state.user) auth.signOut().then(function(){toast('Logged out')}); else openDrawer('cart');
+});
+$('#alertBtn').addEventListener('click',function(){
+  beep();
+  if(window.Notification&&Notification.permission==='default') Notification.requestPermission().then(function(r){toast(r==='granted'?'Order alerts are on':'Pop-ups are blocked, sound alerts still work')});
+  else toast('Sound alerts are on');
+});
 
 /* order status + stock bookkeeping */
 function setStatus(o,next){
@@ -427,7 +496,6 @@ function route(){
   var h=location.hash.replace('#','');
   var own=h==='owner';
   $('#shopView').hidden=own;$('#ownerView').hidden=!own;
-  if(own) $('#nav-owner').setAttribute('aria-current','page'); else $('#nav-owner').removeAttribute('aria-current');
   if(!own) $('#nav-shop').setAttribute('aria-current','page'); else $('#nav-shop').removeAttribute('aria-current');
   if(own) renderOwner();
   else if(h==='women'||h==='men'){var el=document.getElementById(h);if(el) el.scrollIntoView()}
